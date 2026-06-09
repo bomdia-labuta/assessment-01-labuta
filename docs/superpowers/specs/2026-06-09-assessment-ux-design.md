@@ -114,6 +114,7 @@ Dividida em três blocos:
 - Subtexto breve sobre a abordagem da Labuta (experimentos estruturados, não consultoria tradicional)
 - CTA primário: "Conversar com a Labuta →" (link para contato/calendly)
 - CTA secundário: "Compartilhar leitura" (share link da página de resultado)
+- Checkbox opcional de consentimento: "Quero receber conteúdos sobre design organizacional da Labuta" (default: desmarcado — opt-in explícito para uso futuro com ActiveCampaign)
 
 ---
 
@@ -173,6 +174,7 @@ CREATE TABLE assessment_responses (
   -- Lead
   name TEXT NOT NULL,
   email TEXT NOT NULL,
+  marketing_consent BOOLEAN DEFAULT false,  -- opt-in explícito (uso futuro: ActiveCampaign)
   -- Padrão de respostas: { node_id: { narrative_id: "ressoa" | "nao_tanto" }[] }
   responses JSONB NOT NULL,
   -- Resultado gerado
@@ -181,7 +183,8 @@ CREATE TABLE assessment_responses (
   tipologias_ids TEXT[],     -- tipologias sugeridas (ex: ["transparecer", "condicionar"])
   -- Metadados
   result_shared BOOLEAN DEFAULT false,
-  email_sent BOOLEAN DEFAULT false
+  notification_sent BOOLEAN DEFAULT false,  -- email de notificação para a Labuta
+  result_email_sent BOOLEAN DEFAULT false   -- email com resultado para o lead
 );
 ```
 
@@ -213,6 +216,33 @@ O system prompt do agente é injetado via variável de ambiente (`LABUTA_ORG_DES
 - Acolher a complexidade — nunca simplificar em excesso
 - Não apontar "problemas", mas o que **aparece** no sistema
 - Usar pensamento sistêmico: feedback loops, causalidade circular, emergência
+
+---
+
+## Acompanhamento e nutrição de leads
+
+### MVP — Notificação + Supabase
+
+**A cada submissão:**
+
+1. **Email de resultado para o lead** (via Resend) — cópia da leitura sistêmica e tipologias sugeridas, com link para a página de resultado permanente (`/assessment/result/[id]`)
+2. **Email de notificação para a Labuta** (via Resend → `oilabutalabs@gmail.com`) — resumo da submissão: nome, email, nós ativados com intensidade, tipologias sugeridas, link para ver a leitura completa
+
+**Acesso aos dados:**
+
+- Todos os registros ficam em `assessment_responses` no Supabase
+- Acompanhamento via painel do Supabase (Table Editor) ou exportação CSV
+- Não há admin view no produto — o Supabase é o painel de admin no MVP
+
+### V2 — Integração ActiveCampaign
+
+Fora do escopo do MVP. O campo `marketing_consent` no schema já prepara a base para:
+
+- Criar contato no ActiveCampaign apenas se `marketing_consent = true`
+- Iniciar cadência de nutrição (conteúdo sobre design organizacional, abordagem Labuta)
+- Futura newsletter
+
+A integração pode ser feita via webhook do Supabase → ActiveCampaign API, ou via Zapier/Make para início rápido.
 
 ---
 
