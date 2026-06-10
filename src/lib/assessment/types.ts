@@ -54,6 +54,12 @@ export interface Tipologia {
   cta: string | null
 }
 
+export interface ActivatedNode {
+  nodeId: string
+  label: string
+  intensity: number
+}
+
 export interface AssessmentResponse {
   id: string
   created_at: string
