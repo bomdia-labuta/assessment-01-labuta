@@ -2,9 +2,9 @@
 import { initSession, updateNodeState, getNodeStep } from '@/lib/assessment/session'
 
 describe('initSession', () => {
-  it('cria sessão com 9 nós na ordem', () => {
+  it('cria sessão com 10 nós na ordem', () => {
     const s = initSession()
-    expect(s.nodeOrder).toHaveLength(9)
+    expect(s.nodeOrder).toHaveLength(10)
     expect(s.nodes).toEqual({})
     expect(s.responseId).toBeNull()
   })
@@ -12,7 +12,7 @@ describe('initSession', () => {
   it('randomiza a ordem a cada chamada', () => {
     const a = initSession().nodeOrder
     const b = initSession().nodeOrder
-    // Com 9 nós a chance de ordem idêntica é 1/9! ≈ 0
+    // Com 10 nós a chance de ordem idêntica é 1/10! ≈ 0
     expect(a.join('')).not.toBe(b.join(''))
   })
 })

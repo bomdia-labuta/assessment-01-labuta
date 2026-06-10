@@ -11,6 +11,7 @@ export const ASSESSMENT_NODES: AssessmentNode[] = [
   { slug: 'mudanca-e-adaptacao',        label: 'Mudança e adaptação',        color: '#2dd4bf' },
   { slug: 'trabalho-invisivel',         label: 'Trabalho invisível',         color: '#4ade80' },
   { slug: 'ritos-e-reunioes',           label: 'Ritos e reuniões',           color: '#38bdf8' },
+  { slug: 'sobrecarga',                 label: 'Sobrecarga',                 color: '#f43f5e' },
 ]
 
 export const NODE_MAP: Record<NodeSlug, AssessmentNode> = Object.fromEntries(

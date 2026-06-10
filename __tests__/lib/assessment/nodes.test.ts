@@ -2,8 +2,8 @@
 import { ASSESSMENT_NODES, NODE_MAP, ALL_SLUGS } from '@/lib/assessment/nodes'
 
 describe('ASSESSMENT_NODES', () => {
-  it('contém exatamente 9 nós', () => {
-    expect(ASSESSMENT_NODES).toHaveLength(9)
+  it('contém exatamente 10 nós', () => {
+    expect(ASSESSMENT_NODES).toHaveLength(10)
   })
 
   it('todos os nós têm slug, label e cor', () => {
@@ -15,11 +15,12 @@ describe('ASSESSMENT_NODES', () => {
   })
 
   it('NODE_MAP indexa todos os nós por slug', () => {
-    expect(Object.keys(NODE_MAP)).toHaveLength(9)
+    expect(Object.keys(NODE_MAP)).toHaveLength(10)
     expect(NODE_MAP['comunicacao'].label).toBe('Comunicação')
+    expect(NODE_MAP['sobrecarga'].label).toBe('Sobrecarga')
   })
 
-  it('ALL_SLUGS tem 9 slugs', () => {
-    expect(ALL_SLUGS).toHaveLength(9)
+  it('ALL_SLUGS tem 10 slugs', () => {
+    expect(ALL_SLUGS).toHaveLength(10)
   })
 })

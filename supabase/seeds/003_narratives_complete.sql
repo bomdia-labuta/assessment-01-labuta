@@ -86,3 +86,37 @@ INSERT INTO assessment_narratives (node_slug, seed_text, tags) VALUES
 ('poder-e-influencia', 'Tem projetos que avançam porque a pessoa certa se importa. Não porque o sistema incentiva.', ARRAY['poder_e_influencia', 'trabalho_invisivel']),
 ('poder-e-influencia', 'Sei que minha ideia vai emplacar se eu convencer a pessoa certa antes da reunião.', ARRAY['poder_e_influencia', 'tomada_de_decisao', 'ritos_e_reunioes']),
 ('poder-e-influencia', 'Fui excluído de uma conversa que definia o meu trabalho. Fiquei sabendo depois.', ARRAY['poder_e_influencia', 'papeis_e_responsabilidades']);
+
+-- comunicacao (8 seeds)
+INSERT INTO assessment_narratives (node_slug, seed_text, tags) VALUES
+('comunicacao', 'A informação chegou pra mim duas semanas depois que precisava. Ninguém achou que eu precisava saber.', ARRAY['comunicacao', 'papeis_e_responsabilidades']),
+('comunicacao', 'Cada área tem um jeito diferente de chamar a mesma coisa. A gente passa metade do tempo traduzindo.', ARRAY['comunicacao', 'conflitos_entre_areas']),
+('comunicacao', 'O comunicado saiu. Todo mundo leu. Ninguém entendeu o que muda no dia a dia.', ARRAY['comunicacao', 'tomada_de_decisao']),
+('comunicacao', 'Eu soube do projeto pelo corredor. Não porque alguém me incluiu.', ARRAY['comunicacao', 'poder_e_influencia']),
+('comunicacao', 'A gente tem muitos canais de comunicação. A informação ainda se perde.', ARRAY['comunicacao']),
+('comunicacao', 'Quando preciso de uma resposta, não sei se mando mensagem, e-mail ou abro um chamado.', ARRAY['comunicacao', 'ritos_e_reunioes']),
+('comunicacao', 'O que foi decidido na reunião chegou diferente pra cada pessoa que não estava lá.', ARRAY['comunicacao', 'tomada_de_decisao', 'ritos_e_reunioes']),
+('comunicacao', 'Tem uma versão oficial do que está acontecendo. E tem o que as pessoas realmente acham.', ARRAY['comunicacao', 'conversas_dificeis', 'poder_e_influencia']);
+
+-- mudanca-e-adaptacao (8 seeds)
+INSERT INTO assessment_narratives (node_slug, seed_text, tags) VALUES
+('mudanca-e-adaptacao', 'A gente lançou a transformação digital há dois anos. As planilhas continuam as mesmas.', ARRAY['mudanca_e_adaptacao']),
+('mudanca-e-adaptacao', 'Toda vez que chega um novo líder, a estratégia muda. O trabalho recomeça do zero.', ARRAY['mudanca_e_adaptacao', 'poder_e_influencia', 'tomada_de_decisao']),
+('mudanca-e-adaptacao', 'A mudança foi anunciada com muita energia. Três meses depois, ninguém mais falava nisso.', ARRAY['mudanca_e_adaptacao', 'conversas_dificeis']),
+('mudanca-e-adaptacao', 'A gente sabe que precisa mudar. Mas ninguém quer ser o primeiro a mudar.', ARRAY['mudanca_e_adaptacao', 'conversas_dificeis', 'poder_e_influencia']),
+('mudanca-e-adaptacao', 'Já participei de quatro processos de transformação nessa empresa. Aprendi a esperar passar.', ARRAY['mudanca_e_adaptacao']),
+('mudanca-e-adaptacao', 'A iniciativa foi um sucesso no piloto. Nunca escalou.', ARRAY['mudanca_e_adaptacao', 'tomada_de_decisao']),
+('mudanca-e-adaptacao', 'A resistência não é à mudança. É ao fato de que ninguém nos consultou sobre ela.', ARRAY['mudanca_e_adaptacao', 'poder_e_influencia', 'conversas_dificeis']),
+('mudanca-e-adaptacao', 'Quando o mercado mudou, a gente demorou dois anos pra ajustar a estrutura. O problema já era outro.', ARRAY['mudanca_e_adaptacao', 'papeis_e_responsabilidades']);
+
+-- sobrecarga (9 seeds)
+INSERT INTO assessment_narratives (node_slug, seed_text, tags) VALUES
+('sobrecarga', 'Todo projeto é prioridade. Então nada é prioridade.', ARRAY['sobrecarga', 'tomada_de_decisao']),
+('sobrecarga', 'Aceito tudo porque dizer não parece falta de comprometimento.', ARRAY['sobrecarga', 'conversas_dificeis', 'poder_e_influencia']),
+('sobrecarga', 'A equipe cresceu. As demandas cresceram mais.', ARRAY['sobrecarga']),
+('sobrecarga', 'Sei o que precisa ser cortado. Mas ninguém quer assumir o custo político de cortar.', ARRAY['sobrecarga', 'tomada_de_decisao', 'poder_e_influencia']),
+('sobrecarga', 'A gente está sempre apagando incêndio. Nunca tem tempo de evitar o próximo.', ARRAY['sobrecarga']),
+('sobrecarga', 'Fui contratado pra fazer uma coisa. Hoje faço quatro.', ARRAY['sobrecarga', 'papeis_e_responsabilidades']),
+('sobrecarga', 'A reunião foi marcada porque o gestor ficou preocupado com a entrega. Mas a reunião é mais uma coisa que tira tempo da entrega.', ARRAY['sobrecarga', 'ritos_e_reunioes']),
+('sobrecarga', 'Trabalho muito. Mas não consigo dizer o que produzi essa semana.', ARRAY['sobrecarga', 'trabalho_invisivel']),
+('sobrecarga', 'A empresa fala em equilíbrio. Mas quem equilibra é visto como menos comprometido.', ARRAY['sobrecarga', 'conversas_dificeis', 'poder_e_influencia']);

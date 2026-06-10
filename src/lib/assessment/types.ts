@@ -9,6 +9,7 @@ export type NodeSlug =
   | 'mudanca-e-adaptacao'
   | 'trabalho-invisivel'
   | 'ritos-e-reunioes'
+  | 'sobrecarga'
 
 export type ScaleResponse = 'sim' | 'um_pouco' | 'nao'
 
