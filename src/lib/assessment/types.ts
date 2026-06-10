@@ -1,65 +1,73 @@
-export type NarrativeResponse = 'ressoa' | 'nao_tanto'
+// src/lib/assessment/types.ts
+export type NodeSlug =
+  | 'tomada-de-decisao'
+  | 'papeis-e-responsabilidades'
+  | 'comunicacao'
+  | 'poder-e-influencia'
+  | 'conflitos-entre-areas'
+  | 'conversas-dificeis'
+  | 'mudanca-e-adaptacao'
+  | 'trabalho-invisivel'
+  | 'ritos-e-reunioes'
 
-export interface Narrative {
-  id: string
-  text: string
+export type ScaleResponse = 'sim' | 'um_pouco' | 'nao'
+
+export const SCALE_WEIGHTS: Record<ScaleResponse, number> = {
+  sim: 1.0,
+  um_pouco: 0.5,
+  nao: 0.0,
 }
 
 export interface AssessmentNode {
+  slug: NodeSlug
+  label: string
+  color: string
+}
+
+export interface Narrative {
   id: string
-  label: string
-  narratives: Narrative[]
-  // Posição no SVG (grafo fixo)
-  x: number
-  y: number
+  node_slug: NodeSlug
+  seed_text: string
+  variations: string[] | null
+  tags: string[]
 }
 
-// { nodeId: { narrativeId: 'ressoa' | 'nao_tanto' } }
-export type ResponseMap = Record<string, Record<string, NarrativeResponse>>
-
-export interface ActivatedNode {
-  nodeId: string
-  label: string
-  intensity: number // 0-1: proporção de respostas 'ressoa'
+export interface NodeState {
+  response: ScaleResponse | null
+  selectedNarrativeIds: string[]
+  freeInput: string
+  tags: string[]
 }
 
-export interface TipologiaVariable {
-  name: string
-  direction: 'up' | 'down' | 'neutral'
+export interface SessionState {
+  responseId: string | null
+  nodeOrder: NodeSlug[]
+  nodes: Partial<Record<NodeSlug, NodeState>>
 }
-
-export interface TipologiaExperiment {
-  title: string
-  description: string
-}
-
-export interface TipologiaFeedbackLoop {
-  positive: string   // reforço positivo (↑)
-  risk: string       // risco de amplificação (−)
-  observe: string    // o que observar (↺)
-}
-
-export type TipologiaCategory = 'vetorial' | 'sinalizacao' | 'comunicacao'
 
 export interface Tipologia {
   id: string
-  name: string
-  category: TipologiaCategory
-  categoryLabel: string
-  icon: string
-  shortDescription: string
-  effects: string[]
-  feedbackLoop: TipologiaFeedbackLoop
-  variables: TipologiaVariable[]
-  experiments: TipologiaExperiment[]
+  nome: string
+  descricao: string | null
+  assinatura_nos: NodeSlug[]
+  pontos_atencao: string[]
+  cta: string | null
 }
 
-export interface AssessmentResult {
+export interface AssessmentResponse {
   id: string
-  createdAt: string
-  name: string
-  email: string
-  activatedNodes: ActivatedNode[]
-  narrativeText: string
-  tipologiasIds: string[]
+  created_at: string
+  completed_at: string | null
+  name: string | null
+  email: string | null
+  marketing_consent: boolean
+  node_scores: Partial<Record<NodeSlug, number>> | null
+  node_tags: Partial<Record<NodeSlug, string[]>> | null
+  selected_narratives: Partial<Record<NodeSlug, string[]>> | null
+  free_inputs: Partial<Record<NodeSlug, string>> | null
+  tipologia_id: string | null
+  leitura_sistemica: string | null
+  graph_image_url: string | null
+  result_shared: boolean
+  result_email_sent: boolean
 }
