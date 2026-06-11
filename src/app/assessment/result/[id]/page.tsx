@@ -10,16 +10,27 @@ function responseToSession(response: AssessmentResponse): SessionState {
   const nodes: SessionState['nodes'] = {}
   const scores = response.node_scores ?? {}
   const tags = response.node_tags ?? {}
-  const inputs = response.free_inputs ?? {}
   const narratives = response.selected_narratives ?? {}
 
   for (const slug of Object.keys(scores) as NodeSlug[]) {
     const score = scores[slug] ?? 0
+    const shownIds = narratives[slug] ?? []
+    const narrativeResponses: Record<string, 'sim' | 'um_pouco' | 'nao'> = {}
+
+    // Distribui o score real entre as narrativas para preservar o % correto no grafo
+    // score = n_sim * 1.0 + n_half * 0.5
+    const nSim = Math.min(Math.floor(score), shownIds.length)
+    const remainder = score - nSim
+    const nHalf = remainder >= 0.45 && nSim < shownIds.length ? 1 : 0
+    shownIds.forEach((id, idx) => {
+      narrativeResponses[id] = idx < nSim ? 'sim' : idx < nSim + nHalf ? 'um_pouco' : 'nao'
+    })
+
     nodes[slug] = {
-      response: score >= 0.9 ? 'sim' : score >= 0.4 ? 'um_pouco' : 'nao',
-      selectedNarrativeIds: narratives[slug] ?? [],
-      freeInput: inputs[slug] ?? '',
-      tags: tags[slug] ?? [],
+      narrativeResponses,
+      customNarratives: [],
+      shownNarrativeIds: shownIds,
+      activatedTags: tags[slug] ?? [],
     }
   }
 
@@ -56,8 +67,12 @@ export default async function ResultPage({ params }: { params: { id: string } })
         />
 
         {/* Tipologias */}
-        {allTipologias.length > 0 && (
+        {allTipologias.length > 0 ? (
           <TipologiaTabs tipologias={allTipologias} recommended={recommended} />
+        ) : (
+          <div className="rounded-2xl border border-white/5 p-4 text-center text-gray-600 text-xs">
+            Tipologias não disponíveis — seed não aplicada ou erro de conexão
+          </div>
         )}
 
         {/* CTA */}

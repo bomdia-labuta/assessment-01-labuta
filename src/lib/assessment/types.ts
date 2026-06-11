@@ -33,11 +33,22 @@ export interface Narrative {
   tags: string[]
 }
 
-export interface NodeState {
+export interface CustomNarrative {
+  id: string           // UUID local para keying
+  text: string
   response: ScaleResponse | null
-  selectedNarrativeIds: string[]
-  freeInput: string
   tags: string[]
+}
+
+export interface NodeState {
+  // Resposta por micro-narrativa do pool
+  narrativeResponses: Record<string, ScaleResponse>
+  // Micro-narrativas adicionadas pelo usuário
+  customNarratives: CustomNarrative[]
+  // IDs do pool sorteados para esta sessão (garantia de consistência ao voltar)
+  shownNarrativeIds: string[]
+  // Tags ativadas (confirmadas com sim ou um_pouco) — denormalizado para o grafo
+  activatedTags: string[]
 }
 
 export interface SessionState {

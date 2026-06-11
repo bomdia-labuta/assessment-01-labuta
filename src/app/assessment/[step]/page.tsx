@@ -4,18 +4,16 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { ForceGraph } from '@/components/grafo/ForceGraph'
 import { NarrativaPanel } from '@/components/grafo/NarrativaPanel'
-import { loadSession, updateNodeState } from '@/lib/assessment/session'
+import {
+  loadSession,
+  initShownNarratives,
+  updateNarrativeResponse,
+  addCustomNarrative,
+  updateCustomNarrativeResponse,
+  updateCustomNarrativeTags,
+} from '@/lib/assessment/session'
 import { NODE_MAP } from '@/lib/assessment/nodes'
 import type { SessionState, ScaleResponse, NodeSlug, Narrative } from '@/lib/assessment/types'
-
-function sampleNarratives(narratives: Narrative[], n = 3): Narrative[] {
-  const copy = [...narratives]
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[copy[i], copy[j]] = [copy[j]!, copy[i]!]
-  }
-  return copy.slice(0, n)
-}
 
 export default function StepPage() {
   const router = useRouter()
@@ -23,8 +21,7 @@ export default function StepPage() {
   const stepIndex = parseInt(step, 10)
 
   const [session, setSession] = useState<SessionState | null>(null)
-  const [sampledNarratives, setSampledNarratives] = useState<Narrative[]>([])
-  const [taggingTimeout, setTaggingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const [allNarratives, setAllNarratives] = useState<Narrative[]>([])
 
   // Carregar sessão
   useEffect(() => {
@@ -36,50 +33,72 @@ export default function StepPage() {
   const currentSlug = session?.nodeOrder[stepIndex] ?? null
   const currentNode = currentSlug ? NODE_MAP[currentSlug] : null
 
-  // Buscar narrativas do nó atual
+  // Buscar narrativas do nó atual e sortear quais mostrar
   useEffect(() => {
-    if (!currentSlug) return
+    if (!currentSlug || !session) return
     fetch(`/api/assessment/narratives?slug=${currentSlug}`)
       .then(r => r.json())
       .then((data: Narrative[]) => {
-        setSampledNarratives(sampleNarratives(data))
+        setAllNarratives(data)
+        // Inicializar narrativas sorteadas na sessão (idempotente se já sorteadas)
+        setSession(prev => {
+          if (!prev) return prev
+          return initShownNarratives(prev, currentSlug, data, 4)
+        })
       })
-      .catch(() => setSampledNarratives([]))
+      .catch(() => setAllNarratives([]))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSlug])
 
-  const handleAnswer = useCallback((slug: NodeSlug, response: ScaleResponse) => {
-    setSession(prev => {
-      if (!prev) return prev
-      return updateNodeState(prev, slug, { response })
-    })
-  }, [])
+  // Narrativas mostradas = subset sorteado na inicialização
+  const shownNarratives = (() => {
+    if (!session || !currentSlug) return []
+    const shownIds = session.nodes[currentSlug]?.shownNarrativeIds ?? []
+    if (shownIds.length) return allNarratives.filter(n => shownIds.includes(n.id))
+    return allNarratives.slice(0, 4)
+  })()
 
-  const handleFreeInput = useCallback((slug: NodeSlug, text: string) => {
+  const handleNarrativeResponse = useCallback((slug: NodeSlug, narrativeId: string, response: ScaleResponse) => {
     setSession(prev => {
       if (!prev) return prev
-      const updated = updateNodeState(prev, slug, { freeInput: text })
-      // Classificar tags via Claude Haiku (debounced)
-      if (taggingTimeout) clearTimeout(taggingTimeout)
-      if (text.trim()) {
-        const t = setTimeout(async () => {
-          try {
-            const res = await fetch('/api/assessment/tags', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text }),
-            })
-            const { tags } = await res.json() as { tags: string[] }
-            setSession(s => s ? updateNodeState(s, slug, { tags }) : s)
-          } catch { /* non-blocking */ }
-        }, 800)
-        setTaggingTimeout(t)
-      }
+      return updateNarrativeResponse(prev, slug, narrativeId, response, allNarratives)
+    })
+  }, [allNarratives])
+
+  const handleAddCustomNarrative = useCallback((slug: NodeSlug, text: string) => {
+    setSession(prev => {
+      if (!prev) return prev
+      const { session: updated, id } = addCustomNarrative(prev, slug, text)
+      // Classificar tags da micro-narrativa customizada (non-blocking)
+      fetch('/api/assessment/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+        .then(r => r.json())
+        .then(({ tags }: { tags: string[] }) => {
+          setSession(s => s ? updateCustomNarrativeTags(s, slug, id, tags, allNarratives) : s)
+        })
+        .catch(() => { /* non-blocking */ })
       return updated
     })
-  }, [taggingTimeout])
+  }, [allNarratives])
 
-  const currentState = session && currentSlug ? session.nodes[currentSlug] : null
+  const handleCustomNarrativeResponse = useCallback((slug: NodeSlug, customId: string, response: ScaleResponse) => {
+    setSession(prev => {
+      if (!prev) return prev
+      return updateCustomNarrativeResponse(prev, slug, customId, response, allNarratives)
+    })
+  }, [allNarratives])
+
+  const currentState = session && currentSlug ? session.nodes[currentSlug] : undefined
   const isLast = session ? stepIndex === session.nodeOrder.length - 1 : false
+
+  // Nó "visitado" quando tem ao menos uma resposta (pool ou custom)
+  const nodeIsAnswered = currentState && (
+    Object.keys(currentState.narrativeResponses).length > 0 ||
+    currentState.customNarratives.length > 0
+  )
 
   const handleNext = () => {
     if (isLast) {
@@ -103,7 +122,10 @@ export default function StepPage() {
       <div className="flex justify-center gap-2 pt-6 pb-4">
         {session.nodeOrder.map((slug, i) => {
           const state = session.nodes[slug]
-          const done = !!state?.response
+          const done = state && (
+            Object.keys(state.narrativeResponses).length > 0 ||
+            state.customNarratives.length > 0
+          )
           const active = i === stepIndex
           return (
             <div
@@ -139,19 +161,22 @@ export default function StepPage() {
         <div className="w-full lg:flex-1 flex flex-col gap-6">
           <NarrativaPanel
             node={currentNode}
-            narratives={sampledNarratives}
-            currentResponse={currentState?.response ?? null}
-            currentFreeInput={currentState?.freeInput ?? ''}
-            onAnswer={handleAnswer}
-            onFreeInput={handleFreeInput}
+            narratives={shownNarratives}
+            nodeState={currentState}
+            onNarrativeResponse={handleNarrativeResponse}
+            onAddCustomNarrative={handleAddCustomNarrative}
+            onCustomNarrativeResponse={handleCustomNarrativeResponse}
           />
 
           <button
             onClick={handleNext}
             className="w-full py-4 rounded-xl font-semibold text-white transition-all hover:opacity-90"
-            style={{ backgroundColor: currentNode.color }}
+            style={{
+              backgroundColor: nodeIsAnswered ? currentNode.color : '#374151',
+              cursor: 'pointer',
+            }}
           >
-            {isLast ? 'Ver meu resultado →' : `Próximo →`}
+            {isLast ? 'Ver meu resultado →' : 'Próximo →'}
           </button>
         </div>
       </div>

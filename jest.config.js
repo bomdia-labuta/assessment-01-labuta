@@ -5,4 +5,5 @@ module.exports = createJestConfig({
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
   testPathPattern: '__tests__',
+  testPathIgnorePatterns: ['/node_modules/', '/.worktrees/'],
 })

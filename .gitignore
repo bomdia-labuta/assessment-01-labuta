@@ -40,3 +40,11 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 .worktrees/
+
+# playwright artifacts (logs, snapshots, screenshots de teste)
+.playwright-mcp/
+*.png
+*.jpeg
+
+# superpowers
+.superpowers/

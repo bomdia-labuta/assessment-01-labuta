@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 
 interface LeituraSistemicaProps {
   responseId: string
@@ -41,7 +42,22 @@ export function LeituraSistemica({ responseId, initialText }: LeituraSistemicaPr
         </div>
       )}
       {text && (
-        <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
+        <ReactMarkdown
+          components={{
+            h1: ({ children }) => <h1 className="text-white font-bold text-base mb-2 mt-4 first:mt-0">{children}</h1>,
+            h2: ({ children }) => <h2 className="text-white font-semibold text-sm mb-2 mt-4 first:mt-0">{children}</h2>,
+            h3: ({ children }) => <h3 className="text-gray-200 font-semibold text-sm mb-1 mt-3">{children}</h3>,
+            p: ({ children }) => <p className="text-gray-200 text-sm leading-relaxed mb-3 last:mb-0">{children}</p>,
+            strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
+            em: ({ children }) => <em className="text-gray-300 italic">{children}</em>,
+            hr: () => <hr className="border-white/10 my-4" />,
+            ul: ({ children }) => <ul className="list-none pl-0 mb-3 flex flex-col gap-1">{children}</ul>,
+            ol: ({ children }) => <ol className="list-decimal pl-4 mb-3 flex flex-col gap-1 text-gray-200 text-sm">{children}</ol>,
+            li: ({ children }) => <li className="text-gray-200 text-sm flex gap-2 before:content-['·'] before:text-purple-400 before:flex-shrink-0">{children}</li>,
+          }}
+        >
+          {text}
+        </ReactMarkdown>
       )}
     </div>
   )

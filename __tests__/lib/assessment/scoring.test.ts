@@ -1,42 +1,65 @@
 // __tests__/lib/assessment/scoring.test.ts
 import { calculateNodeScore, calculateNodeScores, getTopNodes } from '@/lib/assessment/scoring'
-import type { SessionState } from '@/lib/assessment/types'
+import type { SessionState, NodeState } from '@/lib/assessment/types'
+
+function makeNodeState(overrides: Partial<NodeState> = {}): NodeState {
+  return {
+    narrativeResponses: {},
+    customNarratives: [],
+    shownNarrativeIds: [],
+    activatedTags: [],
+    ...overrides,
+  }
+}
 
 describe('calculateNodeScore', () => {
-  it('retorna 1.0 para sim sem tags', () => {
-    expect(calculateNodeScore('sim', [])).toBe(1.0)
+  it('retorna 0 para nó sem respostas', () => {
+    expect(calculateNodeScore(makeNodeState())).toBe(0)
   })
 
-  it('retorna 0.5 para um_pouco sem tags', () => {
-    expect(calculateNodeScore('um_pouco', [])).toBe(0.5)
+  it('retorna 1.0 para uma narrativa sim', () => {
+    const state = makeNodeState({ narrativeResponses: { 'abc': 'sim' } })
+    expect(calculateNodeScore(state)).toBe(1.0)
   })
 
-  it('retorna 0.0 para nao sem tags', () => {
-    expect(calculateNodeScore('nao', [])).toBe(0.0)
+  it('retorna 0.5 para uma narrativa um_pouco', () => {
+    const state = makeNodeState({ narrativeResponses: { 'abc': 'um_pouco' } })
+    expect(calculateNodeScore(state)).toBe(0.5)
   })
 
-  it('retorna 0.0 para null', () => {
-    expect(calculateNodeScore(null, [])).toBe(0.0)
+  it('retorna 0.0 para uma narrativa nao', () => {
+    const state = makeNodeState({ narrativeResponses: { 'abc': 'nao' } })
+    expect(calculateNodeScore(state)).toBe(0.0)
   })
 
-  it('adiciona boost por tags e mantém max 1.0', () => {
-    const score = calculateNodeScore('sim', ['tag1', 'tag2'])
-    expect(score).toBe(1.0) // capped
+  it('soma múltiplas narrativas', () => {
+    const state = makeNodeState({
+      narrativeResponses: { 'a': 'sim', 'b': 'um_pouco', 'c': 'nao' },
+    })
+    expect(calculateNodeScore(state)).toBe(1.5)
   })
 
-  it('aplica boost em score parcial', () => {
-    const score = calculateNodeScore('nao', ['tag1'])
-    expect(score).toBeGreaterThan(0.0)
-    expect(score).toBeLessThanOrEqual(1.0)
+  it('inclui score de narrativas customizadas', () => {
+    const state = makeNodeState({
+      narrativeResponses: { 'a': 'sim' },
+      customNarratives: [{ id: 'c1', text: 'x', response: 'sim', tags: [] }],
+    })
+    expect(calculateNodeScore(state)).toBe(2.0)
+  })
+
+  it('nó com mais narrativas tem score maior (correto por design)', () => {
+    const small = makeNodeState({ narrativeResponses: { 'a': 'sim' } })
+    const large = makeNodeState({ narrativeResponses: { 'a': 'sim', 'b': 'sim', 'c': 'sim' } })
+    expect(calculateNodeScore(large)).toBeGreaterThan(calculateNodeScore(small))
   })
 })
 
 describe('getTopNodes', () => {
   const scores = {
-    'comunicacao': 0.8,
-    'tomada-de-decisao': 1.0,
-    'trabalho-invisivel': 0.5,
-    'ritos-e-reunioes': 0.2,
+    'comunicacao': 2.0,
+    'tomada-de-decisao': 3.0,
+    'trabalho-invisivel': 1.0,
+    'ritos-e-reunioes': 0.5,
   } as Parameters<typeof getTopNodes>[0]
 
   it('retorna os top 3 por score decrescente', () => {

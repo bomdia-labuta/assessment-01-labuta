@@ -37,13 +37,19 @@ export async function POST(req: NextRequest) {
     const nodeScores = calculateNodeScores(typedSession)
     const topNodes = getTopNodes(nodeScores, 3)
     const nodeTags = Object.fromEntries(
-      Object.entries(typedSession.nodes).map(([slug, state]) => [slug, state?.tags ?? []])
+      Object.entries(typedSession.nodes).map(([slug, state]) => [slug, state?.activatedTags ?? []])
     )
     const freeInputs = Object.fromEntries(
-      Object.entries(typedSession.nodes).map(([slug, state]) => [slug, state?.freeInput ?? ''])
+      Object.entries(typedSession.nodes).map(([slug, state]) => {
+        const customs = state?.customNarratives?.map(cn => cn.text).join(' | ') ?? ''
+        return [slug, customs]
+      })
     )
     const selectedNarratives = Object.fromEntries(
-      Object.entries(typedSession.nodes).map(([slug, state]) => [slug, state?.selectedNarrativeIds ?? []])
+      Object.entries(typedSession.nodes).map(([slug, state]) => [
+        slug,
+        Object.keys(state?.narrativeResponses ?? {}),
+      ])
     )
 
     // 2. Buscar tipologia
@@ -91,9 +97,7 @@ export async function POST(req: NextRequest) {
 
     // 5. Enviar email em background (import dinâmico para não quebrar se resend.ts não existir ainda)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    import('@/lib/email/resend' as any)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then(({ sendResultEmail }: any) => sendResultEmail({
+    import('@/lib/email/resend').then((mod: any) => mod.sendResultEmail({
         to: email,
         name,
         resultId,

@@ -60,7 +60,14 @@ export async function getTipologiaBySignature(
   const { data, error } = await supabase
     .from('assessment_typologies')
     .select('*')
-  if (error || !data) return null
+  if (error) {
+    console.error('[getTipologiaBySignature] Supabase error:', error)
+    return null
+  }
+  if (!data || data.length === 0) {
+    console.warn('[getTipologiaBySignature] Tabela vazia — seed não aplicada?')
+    return null
+  }
 
   // Score de compatibilidade: quantidade de nós em common com assinatura
   const scored = (data as Tipologia[]).map(t => ({
@@ -74,6 +81,13 @@ export async function getTipologiaBySignature(
 export async function getAllTipologias(): Promise<Tipologia[]> {
   const supabase = serviceClient()
   const { data, error } = await supabase.from('assessment_typologies').select('*')
-  if (error || !data) return []
+  if (error) {
+    console.error('[getAllTipologias] Supabase error:', error)
+    return []
+  }
+  if (!data || data.length === 0) {
+    console.warn('[getAllTipologias] Tabela assessment_typologies vazia')
+    return []
+  }
   return data as Tipologia[]
 }
