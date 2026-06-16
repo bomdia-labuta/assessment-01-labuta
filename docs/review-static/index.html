@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assessment Labuta — Revisão de Design</title>
+<style>
+  :root { --bg:#0e0e12; --card:#16161c; --line:rgba(255,255,255,.08); --ink:#e7e7ea; --mut:#9a9aa3; --pur:#a78bfa; --amber:#fbbf24; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  a { color:var(--pur); }
+  header { max-width:1000px; margin:0 auto; padding:56px 24px 8px; }
+  .kicker { color:var(--pur); font-weight:700; font-size:12px; letter-spacing:.15em; text-transform:uppercase; margin:0 0 8px; }
+  h1 { font-size:28px; margin:0 0 12px; }
+  .lead { color:var(--mut); max-width:62ch; }
+  .note { max-width:1000px; margin:20px auto 0; padding:14px 18px; border-left:2px solid rgba(251,191,36,.5); background:rgba(251,191,36,.06); color:#f5e6bf; border-radius:8px; font-size:14px; }
+  nav { max-width:1000px; margin:28px auto 0; padding:0 24px; display:flex; flex-wrap:wrap; gap:8px; }
+  nav a { display:inline-block; padding:6px 12px; border:1px solid var(--line); border-radius:999px; text-decoration:none; color:var(--ink); font-size:13px; }
+  nav a:hover { border-color:var(--pur); }
+  main { max-width:1000px; margin:0 auto; padding:8px 24px 80px; }
+  section { padding-top:48px; }
+  .tag { display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; margin-left:8px; vertical-align:middle; }
+  .focus { background:rgba(167,139,250,.18); color:#c9b8ff; }
+  h2 { font-size:20px; margin:0 0 4px; }
+  .cap { color:var(--mut); margin:0 0 16px; max-width:70ch; font-size:14px; }
+  .shot { width:100%; border:1px solid var(--line); border-radius:14px; display:block; background:var(--card); }
+  ul.q { margin:10px 0 0; padding-left:18px; color:var(--mut); font-size:14px; }
+  ul.q li { margin:3px 0; }
+  footer { max-width:1000px; margin:0 auto; padding:0 24px 80px; color:var(--mut); font-size:13px; }
+  hr { border:none; border-top:1px solid var(--line); margin:0; }
+</style>
+</head>
+<body>
+<header>
+  <p class="kicker">Labuta Labs</p>
+  <h1>Assessment — Revisão de Design</h1>
+  <p class="lead">Protótipo funcional capturado tela a tela. A metodologia e o conteúdo já estão validados —
+  o que precisamos de vocês é a camada de <strong>arquitetura de informação e fluxo</strong>: o que manter,
+  reorganizar ou cortar, com foco no <strong>gate</strong> (conversão) e na <strong>result page</strong> (densidade).</p>
+</header>
+
+<div class="note">
+  Estas são telas estáticas (screenshots fiéis do app real) para revisão e anotação. O fluxo funcional roda à parte.
+</div>
+
+<nav>
+  <a href="#t1">1 · Landing</a>
+  <a href="#t2">2 · Assessment</a>
+  <a href="#t3">3 · Gate</a>
+  <a href="#t4">4 · Gate (mín. 3)</a>
+  <a href="#t5">5 · Result</a>
+</nav>
+
+<main>
+  <section id="t1">
+    <h2>1 · Landing</h2>
+    <p class="cap">Entrada. Explica o que é, para quem é, e convida a começar.</p>
+    <img class="shot" src="shots/01-landing.png" alt="Landing">
+    <ul class="q">
+      <li>A headline e o selo (gratuito · anônimo · ~10 min) posicionam a expectativa certa?</li>
+    </ul>
+  </section>
+
+  <section id="t2">
+    <h2>2 · Assessment (um passo)</h2>
+    <p class="cap">O usuário revisa micro-narrativas de tensões, tema a tema, marcando o quanto ressoa. O grafo é a assinatura visual.</p>
+    <img class="shot" src="shots/02-assessment-step.png" alt="Passo do assessment">
+    <ul class="q">
+      <li>Como o usuário sabe onde está e quanto falta? A progressão entre temas está clara?</li>
+      <li>A mecânica de ressonância (sim / um pouco / não) é a parte fixa do método.</li>
+    </ul>
+  </section>
+
+  <section id="t3">
+    <h2>3 · Gate — captura <span class="tag focus">foco</span></h2>
+    <p class="cap">Pede nome/email para liberar a leitura. É o ponto de conversão do produto.</p>
+    <img class="shot" src="shots/03-gate.png" alt="Gate de captura">
+    <ul class="q">
+      <li>O contato é pedido no momento certo? Mostra valor suficiente <em>antes</em> de pedir?</li>
+      <li>O que acontece depois do envio (a leitura leva ~50s para gerar) está bem tratado?</li>
+    </ul>
+  </section>
+
+  <section id="t4">
+    <h2>4 · Gate — regra de mínimo 3 temas</h2>
+    <p class="cap">Se o usuário revisou menos de 3 temas, o gate bloqueia e orienta a revisar mais antes de liberar a leitura.</p>
+    <img class="shot" src="shots/04-gate-min3.png" alt="Gate — revisar mais temas">
+    <ul class="q">
+      <li>Como tornar esse momento de fricção encorajador, e não punitivo?</li>
+    </ul>
+  </section>
+
+  <section id="t5">
+    <h2>5 · Result page <span class="tag focus">foco</span></h2>
+    <p class="cap">A leitura sistêmica, em blocos: nota de hipótese · 4 níveis · artefatos estruturais impactados · loops de feedback · 1 tipologia de intervenção (com experimentos que endereçam artefatos) · CTA. É a tela de maior densidade.</p>
+    <img class="shot" src="shots/05-result.png" alt="Result page estruturada">
+    <ul class="q">
+      <li>Um lead que não conhece a metodologia consegue ler de cima a baixo e sair com 1 insight claro + vontade de conversar?</li>
+      <li>O que manter / reorganizar / cortar? Como hierarquizar tanta informação?</li>
+      <li>Vocabulário travado: nunca "diagnóstico/problema/solução" — sempre tensões, padrões, hipóteses.</li>
+    </ul>
+  </section>
+</main>
+
+<hr>
+<footer>
+  Decisões travadas (não redesenhar para fora disso): vocabulário controlado · sem score numérico · mínimo 3 temas ·
+  modelo de 4 níveis (circular, sem causa raiz) · 1 tipologia recomendada das 9 · leitura gerada por IA no envio.
+  <br>O documento de handoff completo acompanha este link.
+</footer>
+</body>
+</html>

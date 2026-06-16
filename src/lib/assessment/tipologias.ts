@@ -1,6 +1,24 @@
-import type { Tipologia } from './types'
+// Dados curados das 9 tipologias de intervenção (3 grupos: Vetoriais / Sinalização / Comunicação).
+// Fonte fixa dos cards do relatório — efeitos, feedback loop e variáveis vêm daqui (não da IA).
+// A IA apenas escolhe 1 tipologia (por id) e gera o "porquê" + experimentos endereçando artefatos.
 
-export const TIPOLOGIAS: Record<string, Tipologia> = {
+export type TipologiaCategoria = 'vetorial' | 'sinalizacao' | 'comunicacao'
+export type VariavelDirecao = 'up' | 'down' | 'neutral'
+
+export interface TipologiaIntervencao {
+  id: string
+  name: string
+  category: TipologiaCategoria
+  categoryLabel: string
+  icon: string
+  shortDescription: string
+  effects: string[]
+  feedbackLoop: { positive: string; risk: string; observe: string }
+  variables: { name: string; direction: VariavelDirecao }[]
+  experiments: { title: string; description: string }[]
+}
+
+export const TIPOLOGIAS: Record<string, TipologiaIntervencao> = {
   movimentar: {
     id: 'movimentar',
     name: 'Movimentar',
@@ -330,10 +348,6 @@ export const TIPOLOGIAS: Record<string, Tipologia> = {
   },
 }
 
-export function getTipologia(id: string): Tipologia | undefined {
+export function getTipologia(id: string): TipologiaIntervencao | undefined {
   return TIPOLOGIAS[id]
-}
-
-export function getTipologiasByIds(ids: string[]): Tipologia[] {
-  return ids.map(id => TIPOLOGIAS[id]).filter((t): t is Tipologia => Boolean(t))
 }

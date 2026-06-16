@@ -1,10 +1,21 @@
 import { notFound } from 'next/navigation'
-import { getResponse, getAllTipologias } from '@/lib/supabase/responses'
+import { getResponse } from '@/lib/supabase/responses'
 import { ForceGraph } from '@/components/grafo/ForceGraph'
 import { LeituraSistemica } from '@/components/resultado/LeituraSistemica'
-import { TipologiaTabs } from '@/components/resultado/TipologiaTabs'
-import { initSession } from '@/lib/assessment/session'
+import { RelatorioEstruturado } from '@/components/resultado/RelatorioEstruturado'
+import type { RelatorioEstruturado as Relatorio } from '@/lib/ai/report-schema'
 import type { SessionState, NodeSlug, AssessmentResponse } from '@/lib/assessment/types'
+
+// A coluna leitura_sistemica guarda JSON estruturado (formato novo) ou markdown (registros antigos).
+function parseRelatorio(raw: string | null): Relatorio | null {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed?.leituraSistema ? (parsed as Relatorio) : null
+  } catch {
+    return null
+  }
+}
 
 function responseToSession(response: AssessmentResponse): SessionState {
   const nodes: SessionState['nodes'] = {}
@@ -41,10 +52,9 @@ export default async function ResultPage({ params }: { params: { id: string } })
   const response = await getResponse(params.id)
   if (!response) notFound()
 
-  const allTipologias = await getAllTipologias()
-  const recommended = allTipologias.find(t => t.id === response.tipologia_id) ?? null
   const session = responseToSession(response)
   const firstName = response.name?.split(' ')[0] ?? null
+  const relatorio = parseRelatorio(response.leitura_sistemica)
 
   return (
     <main className="min-h-screen" style={{ background: '#0e0e12' }}>
@@ -60,27 +70,23 @@ export default async function ResultPage({ params }: { params: { id: string } })
         {/* Grafo */}
         <ForceGraph session={session} activeSlug={null} width={640} height={420} />
 
-        {/* Leitura sistêmica (streaming) */}
-        <LeituraSistemica
-          responseId={response.id}
-          initialText={response.leitura_sistemica}
-        />
-
-        {/* Tipologias */}
-        {allTipologias.length > 0 ? (
-          <TipologiaTabs tipologias={allTipologias} recommended={recommended} />
+        {/* Leitura sistêmica — relatório estruturado (novo) ou markdown (registros antigos) */}
+        {relatorio ? (
+          <RelatorioEstruturado data={relatorio} />
         ) : (
-          <div className="rounded-2xl border border-white/5 p-4 text-center text-gray-600 text-xs">
-            Tipologias não disponíveis — seed não aplicada ou erro de conexão
-          </div>
+          <LeituraSistemica
+            responseId={response.id}
+            initialText={response.leitura_sistemica}
+          />
         )}
 
         {/* CTA */}
         <div className="rounded-2xl border border-white/10 p-8 text-center flex flex-col gap-4 bg-white/5">
-          <h2 className="text-xl font-bold text-white">Isso ressou com algo que você está vivendo?</h2>
+          <h2 className="text-xl font-bold text-white">Quer explorar isso com a Labuta?</h2>
           <p className="text-gray-400 text-sm max-w-md mx-auto leading-relaxed">
-            A Labuta trabalha com organizações explorando esses pontos de alavancagem
-            através de experimentos estruturados — não consultoria tradicional.
+            Esta leitura aponta uma das tipologias de intervenção possíveis. As outras —
+            e os pontos de alavancagem que abrem — a gente explora numa conversa,
+            através de experimentos estruturados, não consultoria tradicional.
           </p>
           <a
             href="https://labuta.com/contato"

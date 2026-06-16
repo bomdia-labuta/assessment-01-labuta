@@ -1,6 +1,6 @@
 // src/lib/supabase/responses.ts
 import { createClient } from '@supabase/supabase-js'
-import type { AssessmentResponse, Narrative, Tipologia, NodeSlug } from '@/lib/assessment/types'
+import type { AssessmentResponse, Narrative, NodeSlug } from '@/lib/assessment/types'
 
 function serviceClient() {
   return createClient(
@@ -53,41 +53,9 @@ export async function getNarrativesForNode(nodeSlug: NodeSlug): Promise<Narrativ
   return data as Narrative[]
 }
 
-export async function getTipologiaBySignature(
-  topNodes: NodeSlug[]
-): Promise<Tipologia | null> {
+export async function getAllNarratives(): Promise<Narrative[]> {
   const supabase = serviceClient()
-  const { data, error } = await supabase
-    .from('assessment_typologies')
-    .select('*')
-  if (error) {
-    console.error('[getTipologiaBySignature] Supabase error:', error)
-    return null
-  }
-  if (!data || data.length === 0) {
-    console.warn('[getTipologiaBySignature] Tabela vazia — seed não aplicada?')
-    return null
-  }
-
-  // Score de compatibilidade: quantidade de nós em common com assinatura
-  const scored = (data as Tipologia[]).map(t => ({
-    tipologia: t,
-    score: t.assinatura_nos.filter(n => topNodes.includes(n)).length,
-  }))
-  const best = scored.sort((a, b) => b.score - a.score)[0]
-  return best && best.score > 0 ? best.tipologia : null
-}
-
-export async function getAllTipologias(): Promise<Tipologia[]> {
-  const supabase = serviceClient()
-  const { data, error } = await supabase.from('assessment_typologies').select('*')
-  if (error) {
-    console.error('[getAllTipologias] Supabase error:', error)
-    return []
-  }
-  if (!data || data.length === 0) {
-    console.warn('[getAllTipologias] Tabela assessment_typologies vazia')
-    return []
-  }
-  return data as Tipologia[]
+  const { data, error } = await supabase.from('assessment_narratives').select('*')
+  if (error || !data) return []
+  return data as Narrative[]
 }

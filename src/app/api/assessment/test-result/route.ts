@@ -2,51 +2,65 @@
 // Remove em produção ou proteja com env check
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getTipologiaBySignature } from '@/lib/supabase/responses'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Leitura mock — usada em dev para não chamar a Claude API a cada teste
-const MOCK_LEITURA = `# Leitura Sistêmica — Labuta Labs
-
----
-
-## O que o padrão está dizendo
-
-Três temas chegaram no limite máximo ao mesmo tempo: **carga de trabalho, tomada de decisão e capacidade de mudar**. Quando os três disparam juntos assim, raramente é coincidência. Eles se alimentam mutuamente.
-
-A sobrecarga não vem só do volume de tarefas. Ela vem de decisões que não fecham, de mudanças que não terminam e de um sistema que pede adaptação constante sem oferecer clareza sobre quem decide o quê. As pessoas não estão apenas cansadas de trabalhar — estão cansadas de trabalhar sem ver as coisas resolverem.
-
----
-
-## O que está embaixo da superfície
-
-A comunicação e o poder aparecem em segundo plano, ambos relevantes. Isso nos diz algo importante: **a informação circula de forma desigual, e isso está conectado a quem tem influência**. Não é que as pessoas não se comunicam — é que a comunicação relevante não chega para quem precisa dela, ou chega tarde, ou chega filtrada.
-
-O trabalho invisível e os conflitos entre áreas estão presentes, mas não explodiram. Isso sugere que **o problema não é guerra aberta entre times** — é uma tensão crônica, de baixa intensidade, onde cada área carrega coisas que ninguém vê e sente que o outro lado não reconhece o esforço.
-
----
-
-## O que ainda não veio à tona
-
-Conversas difíceis chegaram a zero. Reuniões e papéis chegaram baixo. Isso merece atenção porque **não significa que esses temas estão bem** — significa que ainda não viraram assunto. As pessoas sabem que certas conversas precisam acontecer, mas o ambiente ainda não deu sinal de que é seguro tê-las.
-
----
-
-## Como lemos esse conjunto
-
-Este é um sistema sob pressão acumulada. A carga é real, mas o que a mantém alta é estrutural: **decisões que circulam sem resolver, mudanças que se sobrepõem antes de assentar, e pouca clareza sobre quem tem autoridade para fechar o quê**.
-
----
-
-## Por onde começar
-
-A pergunta central que esse padrão coloca é: **quem tem autoridade para decidir o quê, e isso está claro para todo mundo?**
-
-Enquanto essa pergunta não tiver resposta explícita, a sobrecarga vai continuar porque as pessoas vão continuar compensando com esforço o que deveria ser resolvido com estrutura.`
+// Relatório mock estruturado — usado em dev para não chamar a Claude API a cada teste
+const MOCK_RELATORIO = {
+  leituraSistema: {
+    eventos: 'Reuniões que terminam sem encaminhar nada, decisões que circulam sem fechar e uma carga de trabalho que se mantém alta porque ninguém consegue dizer "isto está resolvido".',
+    padroes: 'As pessoas compensam com esforço individual o que deveria ser resolvido por estrutura. Quando uma decisão trava, alguém puxa para si — e isso vira a norma.',
+    estruturas: 'Não há clareza explícita sobre quem tem autoridade para fechar cada tipo de decisão. A informação relevante circula de forma desigual, conectada a quem tem influência.',
+    modelos: 'Existe o pressuposto de que pedir clareza sobre autoridade é questionar hierarquia — então ninguém pede, e a ambiguidade persiste como se fosse inevitável.',
+  },
+  artefatosImpactados: [
+    {
+      artefatoId: 'poder',
+      comoImpacta: 'A autoridade de decisão está difusa: quem pode fechar o quê não é explícito, e isso trava o sistema.',
+      tensaoRelacionada: 'Tomada de decisão e Poder e influência ressoaram fortemente.',
+    },
+    {
+      artefatoId: 'fluxos',
+      comoImpacta: 'A informação relevante chega tarde ou filtrada para quem precisa agir.',
+      tensaoRelacionada: 'Comunicação ressoou parcialmente, conectada a quem tem influência.',
+    },
+    {
+      artefatoId: 'papeis',
+      comoImpacta: 'Responsabilidades se sobrepõem sem dono claro, gerando retrabalho e compensação individual.',
+      tensaoRelacionada: 'Sobrecarga e Papéis e responsabilidades aparecem ligados.',
+    },
+  ],
+  loops: [
+    {
+      titulo: 'Decisão que não fecha alimenta sobrecarga',
+      descricao: 'Decisões sem dono claro ficam abertas → pessoas compensam com esforço para destravar → a carga sobe → sobra menos espaço para estruturar a decisão → ela continua sem dono.',
+      variaveis: [
+        { nome: 'Clareza de autoridade', direcao: 'down' as const },
+        { nome: 'Esforço de compensação', direcao: 'up' as const },
+        { nome: 'Carga percebida', direcao: 'up' as const },
+      ],
+    },
+  ],
+  tipologia: {
+    tipologiaId: 'transparecer',
+    porque: 'O sistema trava porque a autoridade de decisão opera no implícito. Tornar visível quem decide o quê age direto na variável "clareza de autoridade" — a que mais puxa o loop de sobrecarga. É a intervenção de menor resistência para este sistema específico.',
+    experimentos: [
+      {
+        titulo: 'Mapa de decisão público',
+        descricao: 'Crie uma página simples que explicita quem tem autoridade em cada tipo de decisão. Não é organograma — é accountability map. Revise mensalmente por 60 dias e observe se as decisões fecham mais rápido.',
+        artefatoId: 'poder',
+      },
+      {
+        titulo: 'Decision log compartilhado',
+        descricao: 'Para as próximas 10 decisões importantes, registre quem decidiu, com que informação e qual foi a lógica. Torne acessível ao time e observe como isso muda o fluxo de informação.',
+        artefatoId: 'fluxos',
+      },
+    ],
+  },
+}
 
 // Sessão realista: cada nó com tags diferentes para mostrar conexões variadas
 const TEST_SESSION = {
@@ -84,16 +98,6 @@ export async function GET() {
     nodeScores[slug] = sum
   }
 
-  const topNodes = Object.entries(nodeScores)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 3)
-    .map(([slug]) => slug) as string[]
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tipologia = await getTipologiaBySignature(topNodes as any)
-  console.log('[test-result] topNodes:', topNodes)
-  console.log('[test-result] tipologia encontrada:', tipologia?.nome ?? 'null')
-
   const nodeTags = Object.fromEntries(
     Object.entries(TEST_SESSION.nodes).map(([slug, state]) => [slug, state.activatedTags])
   )
@@ -111,9 +115,8 @@ export async function GET() {
       node_tags: nodeTags,
       selected_narratives: selectedNarratives,
       free_inputs: {},
-      tipologia_id: tipologia?.id ?? null,
       completed_at: new Date().toISOString(),
-      leitura_sistemica: MOCK_LEITURA,
+      leitura_sistemica: JSON.stringify(MOCK_RELATORIO),
     })
     .select('id')
     .single()
@@ -122,7 +125,10 @@ export async function GET() {
     return NextResponse.json({ error: error?.message }, { status: 500 })
   }
 
-  return NextResponse.redirect(
-    new URL(`/assessment/result/${data.id}`, 'http://localhost:3001')
-  )
+  // Redirect RELATIVO: o browser resolve contra o domínio atual (funciona via túnel/preview,
+  // não fixa em localhost). NextResponse.redirect exige URL absoluta, então usamos Response cru.
+  return new Response(null, {
+    status: 307,
+    headers: { Location: `/assessment/result/${data.id}` },
+  })
 }

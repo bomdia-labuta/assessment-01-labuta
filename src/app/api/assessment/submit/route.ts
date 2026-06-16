@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
-import { calculateNodeScores, getTopNodes } from '@/lib/assessment/scoring'
-import { getTipologiaBySignature } from '@/lib/supabase/responses'
-import type { SessionState } from '@/lib/assessment/types'
+import { calculateNodeScores } from '@/lib/assessment/scoring'
+import { getAllNarratives } from '@/lib/supabase/responses'
+import { generateReport } from '@/lib/ai/leitura'
+import { NODE_MAP } from '@/lib/assessment/nodes'
+import type { SessionState, NodeSlug } from '@/lib/assessment/types'
+import type { NarrativaAtivada, ContextoRelatorio } from '@/lib/ai/report-prompt'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,8 +22,49 @@ const SubmitSchema = z.object({
     nodeOrder: z.array(z.string()),
     nodes: z.record(z.any()),
   }),
-  graphImage: z.string().nullable().optional(),
 })
+
+async function buildContextoRelatorio(session: SessionState): Promise<ContextoRelatorio> {
+  // Fetch all narratives once (batch, not per-node)
+  const allNarratives = await getAllNarratives()
+  const narrativeMap = Object.fromEntries(allNarratives.map(n => [n.id, n]))
+
+  const narrativasAtivadas: NarrativaAtivada[] = []
+  const narrativasCustomizadas: ContextoRelatorio['narrativasCustomizadas'] = []
+  const nosRevisados: ContextoRelatorio['nosRevisados'] = []
+
+  for (const [slug, state] of Object.entries(session.nodes) as [NodeSlug, SessionState['nodes'][NodeSlug]][]) {
+    if (!state) continue
+    const nodeLabel = NODE_MAP[slug]?.label ?? slug
+    nosRevisados.push({ slug, label: nodeLabel })
+
+    // Narrativas do pool
+    for (const [narrativeId, ressonancia] of Object.entries(state.narrativeResponses)) {
+      if (ressonancia === 'nao') continue
+      const narrative = narrativeMap[narrativeId]
+      if (!narrative) continue
+      narrativasAtivadas.push({
+        nodeSlug: slug,
+        nodeLabel,
+        texto: narrative.seed_text,
+        ressonancia: ressonancia as 'sim' | 'um_pouco',
+        tags: narrative.tags ?? [],
+      })
+    }
+
+    // Narrativas customizadas pelo usuário
+    for (const cn of state.customNarratives ?? []) {
+      if (!cn.response || cn.response === 'nao') continue
+      narrativasCustomizadas.push({
+        nodeLabel,
+        texto: cn.text,
+        ressonancia: cn.response as 'sim' | 'um_pouco',
+      })
+    }
+  }
+
+  return { narrativasAtivadas, narrativasCustomizadas, nosRevisados }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,12 +74,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
     }
 
-    const { name, email, marketing_consent, session, graphImage } = parsed.data
+    const { name, email, marketing_consent, session } = parsed.data
     const typedSession = session as SessionState
 
-    // 1. Calcular scores
+    // 1. Preparar dados da sessão
     const nodeScores = calculateNodeScores(typedSession)
-    const topNodes = getTopNodes(nodeScores, 3)
     const nodeTags = Object.fromEntries(
       Object.entries(typedSession.nodes).map(([slug, state]) => [slug, state?.activatedTags ?? []])
     )
@@ -52,25 +95,16 @@ export async function POST(req: NextRequest) {
       ])
     )
 
-    // 2. Buscar tipologia
-    const tipologia = await getTipologiaBySignature(topNodes)
+    // 2. Gerar leitura sistêmica (objeto estruturado) com contexto completo das narrativas
+    const contexto = await buildContextoRelatorio(typedSession)
+    const relatorio = await generateReport(contexto).catch(err => {
+      console.error('[submit] Erro ao gerar leitura:', err)
+      return null
+    })
+    // Persistido como JSON string na coluna leitura_sistemica (text)
+    const leituraSistemica = relatorio ? JSON.stringify(relatorio) : null
 
-    // 3. Salvar imagem do grafo no Storage (se fornecida)
-    let graphImageUrl: string | null = null
-    if (graphImage) {
-      const base64Data = graphImage.replace(/^data:image\/\w+;base64,/, '')
-      const buffer = Buffer.from(base64Data, 'base64')
-      const filename = `graphs/${Date.now()}-${Math.random().toString(36).slice(2)}.png`
-      const { error: uploadError } = await supabase.storage
-        .from('assessment-graphs')
-        .upload(filename, buffer, { contentType: 'image/png', upsert: false })
-      if (!uploadError) {
-        const { data: { publicUrl } } = supabase.storage.from('assessment-graphs').getPublicUrl(filename)
-        graphImageUrl = publicUrl
-      }
-    }
-
-    // 4. Salvar response completa
+    // 3. Salvar tudo junto
     const { data, error } = await supabase
       .from('assessment_responses')
       .insert({
@@ -81,8 +115,7 @@ export async function POST(req: NextRequest) {
         node_tags: nodeTags,
         selected_narratives: selectedNarratives,
         free_inputs: freeInputs,
-        tipologia_id: tipologia?.id ?? null,
-        graph_image_url: graphImageUrl,
+        leitura_sistemica: leituraSistemica,
         completed_at: new Date().toISOString(),
       })
       .select('id')
@@ -95,16 +128,12 @@ export async function POST(req: NextRequest) {
     const resultId = data.id as string
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
 
-    // 5. Enviar email em background (import dinâmico para não quebrar se resend.ts não existir ainda)
+    // 4. Email em background (não bloqueia)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     import('@/lib/email/resend').then((mod: any) => mod.sendResultEmail({
-        to: email,
-        name,
-        resultId,
-        graphImageUrl,
-        resultUrl: `${baseUrl}/assessment/result/${resultId}`,
-      }))
-      .catch((err: unknown) => console.error('Email error (non-blocking):', err))
+      to: email, name, resultId,
+      resultUrl: `${baseUrl}/assessment/result/${resultId}`,
+    })).catch((err: unknown) => console.error('Email error (non-blocking):', err))
 
     return NextResponse.json({ id: resultId })
   } catch (err) {

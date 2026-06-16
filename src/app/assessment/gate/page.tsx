@@ -30,12 +30,10 @@ export default function GatePage() {
     setError(null)
 
     try {
-      const graphImage = graphRef.current?.toBase64Image?.() ?? null
-
       const res = await fetch('/api/assessment/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, marketing_consent: consent, session, graphImage }),
+        body: JSON.stringify({ name, email, marketing_consent: consent, session }),
       })
 
       if (!res.ok) {
@@ -53,6 +51,40 @@ export default function GatePage() {
   }
 
   if (!session) return null
+
+  // "Revisado" = nó com pelo menos 1 micro-narrativa respondida
+  const reviewedCount = Object.values(session.nodes).filter(
+    n => n && Object.keys(n.narrativeResponses ?? {}).length > 0
+  ).length
+  const MIN_NODES = 3
+
+  if (reviewedCount < MIN_NODES) {
+    return (
+      <main className="min-h-screen relative flex items-center justify-center px-4"
+        style={{ background: '#0e0e12' }}>
+        <div className="absolute inset-0 flex items-center justify-center opacity-20 blur-sm pointer-events-none">
+          <ForceGraph session={session} activeSlug={null} width={600} height={600} graphRef={graphRef} />
+        </div>
+
+        <div className="relative z-10 bg-black/60 backdrop-blur-md rounded-2xl border border-white/10 p-8 w-full max-w-md text-center">
+          <p className="text-purple-400 font-bold text-xs tracking-widest uppercase mb-4">LABUTA LABS</p>
+          <h1 className="text-2xl font-bold text-white mb-2">Falta pouco para o seu mapa.</h1>
+          <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+            Para gerar uma leitura sistêmica com valor, é preciso revisar pelo menos{' '}
+            <span className="text-white font-semibold">{MIN_NODES} temas</span>.
+            Você revisou {reviewedCount} {reviewedCount === 1 ? 'até agora' : 'até agora'}.
+            Volte e marque o que ressoa com a sua realidade em mais alguns temas.
+          </p>
+          <button
+            onClick={() => router.push('/assessment')}
+            className="bg-purple-600 text-white rounded-xl py-3.5 px-6 font-semibold hover:bg-purple-500 transition-colors text-sm"
+          >
+            ← Revisar mais temas
+          </button>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen relative flex items-center justify-center px-4"
